@@ -1,0 +1,15 @@
+#GameScreen {
+	border: 1px solid black;
+}
+#StartBtn {
+	font-size: 20px;
+}
+#PauseBtn {
+	font-size: 20px;
+}
+#BestScore{
+		font-size: 20px;
+}
+#SnowGame{
+	width: 805px;
+}

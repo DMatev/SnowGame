@@ -1,6 +1,6 @@
 Player = GameObject.extend({
     init: function (){
-        this.maxHealth = 10;
+        this.maxHealth = 2;
 		this.currentHealth = this.maxHealth;
 		this.width = 100;
 		this.height = 105;

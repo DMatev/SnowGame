@@ -1,12 +1,15 @@
 var ctx;
 
 var SnowGame = (function() {
-	var startBtn, pauseBtn;
+	var startBtn, pauseBtn, pauseBtn;
 	
 	$(document).ready(function(){
+		ctx =  $('#GameScreen')[0].getContext('2d');
 		startBtn = $('#StartBtn');
 		pauseBtn = $('#PauseBtn');
-		ctx =  $('#GameScreen')[0].getContext('2d');
+		pBestScore = $('#BestScore')[0];
+		
+		pBestScore.innerHTML  = ('Best score is: ' + SnowGame.getBestScore());
 		pauseBtn.hide();
 		startBtn.on('click', function() {
 			SnowGame.init();
@@ -33,43 +36,28 @@ var SnowGame = (function() {
 		}
 	}
 	var Game = {
-		mainLoop: function(){
-			Timer.increment();
-			Game.spawnRock();
-			Game.spawnTree();
-			Game.spawnSnow();
-			Game.updateScreen();
-			Game.interactionManager();
-			if(Timer.time == 15000){
-				Game.makeHarder();
-			}
-			if(Timer.time == 35000){
-				Game.makeHarder();
-			}
-			if(Timer.time == 45000){
-				Game.makeHarder();
-			}			
-		},
 		init: function(){
-				Timer.time = 0;
-				this.isPaused = false;
-				this.isGameOver = false;
-				this.scoreScale = 1;
-				this.lastTreeSpawnTimestamp = -1;
-				this.TreeSpawnFrequencyMs = 1000;
-				this.TreeSpeed = 5;
-				this.lastRockSpawnTimestamp = -1;
-				this.RockSpawnFrequencyMs = 1000;
-				this.lastSnowSpawnTimestamp = -1;
-				this.lastSnowSpawnFrequencyMs = 300;
-				this.RockSpeed = 5;
-				this.LastMoveRight = true;
-				this.Player = new Player();
-				this.Player.draw();
-				this.backgroundImg =  $('<img src="img/background.jpg" />')[0];
-				this.backgroundOffset = 0;
+			Timer.init();
+			Game.loadScore();
+			this.isPaused = false;
+			this.isGameOver = false;
+			this.scoreScale = 1;
+			this.lastTreeSpawnTimestamp = -1;
+			this.TreeSpawnFrequencyMs = 1000;
+			this.TreeSpeed = 5;
+			this.lastRockSpawnTimestamp = -1;
+			this.RockSpawnFrequencyMs = 1000;
+			this.lastSnowSpawnTimestamp = -1;
+			this.lastSnowSpawnFrequencyMs = 300;
+			this.RockSpeed = 5;
+			this.LastMoveRight = true;
+			this.Player = new Player();
+			this.Player.draw();
+			this.backgroundImg =  $('<img src="img/background.jpg" />')[0];
+			this.backgroundOffset = 0;
 
 		},
+
 		refreshTimeMS: 25,
 		gameInterval: null,
 		isPaused: null,
@@ -103,17 +91,53 @@ var SnowGame = (function() {
 		
 		backgroundImg: null,
 		backgroundOffset: null,
-		
+		bestScore: 0,
+
+		mainLoop: function(){
+			Timer.increment();
+			Game.spawnRock();
+			Game.spawnTree();
+			Game.spawnSnow();
+			Game.updateScreen();
+			Game.interactionManager();
+			if(Timer.time == 15000){
+				Game.makeHarder();
+			}
+			if(Timer.time == 35000){
+				Game.makeHarder();
+			}
+			if(Timer.time == 45000){
+				Game.makeHarder();
+			}			
+		},
+
+		saveScore: function () {
+			if(Game.bestScore < Game.Player.score){
+				Game.bestScore = Game.Player.score;
+	        	localStorage.setItem('score', Game.Player.score);
+			}	
+	    },
+
+	    loadScore: function () {
+	    	if( localStorage.getItem('score') === null){
+	    		localStorage.setItem('score', 0);
+	    	}
+	    	Game.bestScore = localStorage.getItem('score');
+	    	return Game.bestScore;
+	    },
+
 		makeHarder: function (){
 			this.speedUp();
 			this.TreeSpawnFrequencyMs -= 300;
 			this.RockSpawnFrequencyMs -= 300;
 		},
+
 		speedUp: function(){
 			this.TreeSpeed += 1;
 			this.RockSpeed += 1;
 			this.scoreScale += 5;
 		},
+
 		slowDown: function(){
 			if(this.scoreScale > 5){
 				this.TreeSpeed -= 1;
@@ -148,6 +172,7 @@ var SnowGame = (function() {
 				Game.speedUp();
 			}
 		},
+
 		spawnTree: function(){
 			Timer.nowMs = Date.now();
 			if(Timer.nowMs - Game.lastTreeSpawnTimestamp > Game.TreeSpawnFrequencyMs){
@@ -155,6 +180,7 @@ var SnowGame = (function() {
 				Game.Trees.push(new Tree());
 			}
 		},
+
 		spawnRock: function(){
 			Timer.nowMs = Date.now();
 			if(Timer.nowMs - Game.lastRockSpawnTimestamp > Game.RockSpawnFrequencyMs){
@@ -162,6 +188,7 @@ var SnowGame = (function() {
 				Game.Rocks.push(new Rock());
 			}
 		},
+
 		spawnSnow: function(){
 			Timer.nowMs = Date.now();
 			if(Timer.nowMs - Game.lastSnowSpawnTimestamp > Game.lastSnowSpawnFrequencyMs){
@@ -170,6 +197,7 @@ var SnowGame = (function() {
 			}
 			
 		},
+
 		updateScreen: function(){	
 			ctx.clearRect(0, 0, Game.holeScreenWidth, Game.holeScreenHeight);
 			Game.drawBackground();
@@ -188,6 +216,7 @@ var SnowGame = (function() {
 			Game.drawHealthBar();
 
 		},
+
 		detectCollision: function(obj1,obj2){
 			var hit = ((obj1.top < (obj2.top +obj2.height)) &&
 							((obj1.left + obj1.width) > obj2.left) && ((obj1.left + obj1.width) < (obj2.left + obj2.width))) ||
@@ -195,6 +224,26 @@ var SnowGame = (function() {
 							(obj1.left > obj2.left) && (obj1.left < (obj2.left + obj2.width)))
 			return hit;
 		},
+
+		playerTakeDmg: function(dmg){
+			if((Game.Player.currentHealth - dmg) > 0){
+				Game.Player.currentHealth--;
+			} else {
+				Game.gameOver();
+			}
+		},
+
+		gameOver: function(){
+			Game.isGameOver = true;
+			clearInterval(Game.gameInterval);
+			window.removeEventListener('keydown', Game.trackPlayerMove, false);
+			Game.saveScore();
+			Game.drawGameOver();
+			startBtn.show();
+			pauseBtn.hide();
+			pBestScore.innerHTML  = ('Best score is: ' + SnowGame.getBestScore());		
+		},
+
 		interactionManager: function(){
 			Game.Player.score += Game.scoreScale;
 			for(var i=0; i<Game.Trees.length; i++){
@@ -257,13 +306,7 @@ var SnowGame = (function() {
 				}
 			}
 		},
-		playerTakeDmg: function(dmg){
-			if((Game.Player.currentHealth - dmg) > 0){
-				Game.Player.currentHealth--;
-			} else {
-				Game.gameOver();
-			}
-		},
+
 		drawGameOver: function(){
 			ctx.save();
 			ctx.clearRect(0, 0, Game.holeScreenWidth, Game.holeScreenHeight);
@@ -272,6 +315,7 @@ var SnowGame = (function() {
 			ctx.fillText("Game Over", 300, 280);
 			ctx.restore();
 		},
+
 		drawScore: function(){
 			ctx.save();
 			ctx.translate(0, Game.mainScreenHeight);
@@ -279,7 +323,8 @@ var SnowGame = (function() {
 			ctx.fillStyle="red";
 			ctx.fillText("Score: " + Game.Player.score, 10, 30);
 			ctx.restore();
-		},	
+		},
+
 		drawTimer: function(){
 			var minutes = Math.floor(parseInt(Timer.time/1000) / 60);
 			var seconds = parseInt(Timer.time/1000) - minutes * 60;			
@@ -290,6 +335,7 @@ var SnowGame = (function() {
 			ctx.fillText("Time: " + minutes + ":" + seconds, 100, 30);
 			ctx.restore();
 		},
+
 		drawHealthBar: function(){
 			var HealthBarHeight = 20;
 			var HealthBarWidth = parseInt(Game.healthScreenWidth/(Game.Player.maxHealth + 2));
@@ -309,6 +355,7 @@ var SnowGame = (function() {
 			}
 			ctx.restore();
 		},
+
 		drawBackground: function(){
 			ctx.save();			
 			Game.backgroundOffset += Game.TreeSpeed;
@@ -320,15 +367,8 @@ var SnowGame = (function() {
 					}
 					ctx.drawImage(Game.backgroundImg, 0, -Game.backgroundOffset);
 			ctx.restore();
-		},
-		gameOver: function(){
-			Game.isGameOver = true;
-			clearInterval(Game.gameInterval);
-			window.removeEventListener('keydown', Game.trackPlayerMove, false);
-			Game.drawGameOver();
-			startBtn.show();
-			pauseBtn.hide();		
 		}
+
 	}
 	
 	return {
@@ -344,6 +384,7 @@ var SnowGame = (function() {
 				pauseBtn.show();
 			}
 		},
+
 		togglePause : function(){
 			if(Game.isPaused && !Game.isGameOver){
 				window.addEventListener('keydown', Game.trackPlayerMove, false);
@@ -357,14 +398,21 @@ var SnowGame = (function() {
 				Game.isPaused = !Game.isPaused;
 			}
 		},
+
 		isGameOver: function(){
 			return Game.isGameOver;
 		},
+
 		getGameScreenWidth: function(){
 			return Game.mainScreenWidth;
 		},
+
 		getGameScreenHeight: function(){
 			return Game.mainScreenHeight;
 		},
+
+		getBestScore: function(){
+			return Game.loadScore();	
+		}
 	}
 })();

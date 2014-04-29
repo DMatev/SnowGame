@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Canvas</title>
+		<title>Snow Game</title>
+		<link rel="stylesheet" href="css/main.css">
 		<script src="js/lib/inheritance.js"></script>
 		<script src="js/lib/jquery-1.11.0.min.js"></script>
 		<script src="js/GameObjects/gameObject.js"></script>
@@ -10,23 +11,15 @@
 		<script src="js/GameObjects/Rock.js"></script>
 		<script src="js/GameObjects/Snow.js"></script>
 		<script src="js/SnowGame.js"></script>
-		<style type="text/css">
-		#GameScreen {
-			border: 1px solid black;
-		}
-		#StartBtn {
-			font-size: 20px;
-		}
-		#PauseBtn {
-			font-size: 20px;
-		}
-		</style>
 	</head>
 	<body>
-		<div> 
-			<canvas width="800" height="540" id="GameScreen"></canvas>	
+		<div id='SnowGame'>
+			<div> 
+				<canvas width="800" height="540" id="GameScreen"></canvas>	
+			</div>
+			<button id='StartBtn'>Start</button>
+			<button id='PauseBtn'>Pause</button>
+			<p id='BestScore'>Best score is: </p>
 		</div>
-		<button id='StartBtn'>Start</button>
-		<button id='PauseBtn'>Pause</button>
 	</body>
 </html>
